@@ -1,0 +1,34 @@
+{
+  "name": "nostrjs",
+  "version": "0.0.1",
+  "description": "Smart nostr inter-user synchronization",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "vite serve test",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nuzulul/NOSTRJS.git"
+  },
+  "keywords": [
+    "nostr"
+  ],
+  "author": {
+    "name": "Nuzulul Zulkarnain",
+    "url": "https://nuzulul.github.io"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nuzulul/NOSTRJS/issues"
+  },
+  "homepage": "https://github.com/nuzulul/NOSTRJS#readme",
+  "dependencies": {
+    "webpeer-piping": "^0.0.1",
+    "webpeerjs": "^0.1.9"
+  },
+  "devDependencies": {
+    "vite": "^5.3.4"
+  }
+}

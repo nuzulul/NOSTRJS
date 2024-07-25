@@ -1,0 +1,20 @@
+<html>
+<header>
+<title>NOSTRJS</title>
+</header>
+<body>
+	<script type="module">
+    
+        import { nostrjs } from './../library/nostrjs.js'
+        
+		void async function main() {
+			
+			const tunnel = await nostrjs.createNostrDB()
+			
+			console.log('start')
+			
+		}()
+		
+	</script>
+</body>
+</html>
