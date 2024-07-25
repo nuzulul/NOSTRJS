@@ -1,6 +1,8 @@
 # NOSTRJS
 Nostr smart inter-user synchronization.
 
+⚠️ **Be Careful:** This project is in early development
+
 ## What is this?
 NOSTRJS is another nostr client that acts like a regular client but has special capabilities for direct communication between users. This can help strengthen the nostr network with a chance to escape blocking system. Because blocking all nostr relays alone will not be enough to stop the network but also have to block all users.
 
