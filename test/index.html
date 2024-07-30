@@ -3,15 +3,28 @@
 <title>NOSTRJS</title>
 </header>
 <body>
+	<div>Id: <span id="id">id</span></div>
+	<div>Status: <span id="status">status</span></div>
+	<div>Peers: <span id="peers">peers</span></div>
+	<div>WebPeers: <span id="webpeers">webpeers</span></div>
+	<div>Online: <span id="online">-</span></div>
 	<script type="module">
     
         import { nostrjs } from './../library/nostrjs.js'
         
 		void async function main() {
 			
-			const tunnel = await nostrjs.createNostrDB()
+			const db = await nostrjs.createNostrDB()
 			
-			console.log('start')
+			console.log('start') 
+			
+			setInterval(()=>{
+				document.getElementById('id').innerText = db.webpeer.id
+				document.getElementById('status').innerText = db.webpeer.status
+				document.getElementById('peers').innerText = JSON.stringify(db.webpeer.IPFS.libp2p.getPeers())
+				document.getElementById('webpeers').innerText = JSON.stringify(db.webpeer.peers.map((item)=>item.id))
+				document.getElementById('online').innerText = db.online
+			},500)
 			
 		}()
 		
