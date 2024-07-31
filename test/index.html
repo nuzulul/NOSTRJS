@@ -14,19 +14,32 @@
         
 		void async function main() {
 			
-			const db = await nostrjs.createNostrDB()
+			const client = await nostrjs.createNostrClient()
 			
-			console.log('start') 
+			console.log('start')
 			
 			setInterval(()=>{
-				document.getElementById('id').innerText = db.webpeer.id
-				document.getElementById('status').innerText = db.webpeer.status
-				document.getElementById('peers').innerText = JSON.stringify(db.webpeer.IPFS.libp2p.getPeers())
-				document.getElementById('webpeers').innerText = JSON.stringify(db.webpeer.peers.map((item)=>item.id))
-				document.getElementById('online').innerText = db.online
+				document.getElementById('id').innerText = client.webpeer.id
+				document.getElementById('status').innerText = client.webpeer.status
+				
+				document.getElementById('peers').innerHTML = ''
+				for(const peersid of client.webpeer.IPFS.libp2p.getPeers()){write('peers',peersid)}
+
+				document.getElementById('webpeers').innerHTML = ''
+				for(const peersid of client.webpeer.peers.map((item)=>item.id)){write('webpeers',peersid)}
+				
+				
+				document.getElementById('online').innerText = client.online
 			},500)
 			
 		}()
+
+		function write(id,input){
+			const node = document.createElement("li")
+			const textnode = document.createTextNode(input)
+			node.appendChild(textnode)
+			document.getElementById(id).appendChild(node)
+		}
 		
 	</script>
 </body>
