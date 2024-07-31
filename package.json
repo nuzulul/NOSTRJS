@@ -26,8 +26,10 @@
   "homepage": "https://github.com/nuzulul/NOSTRJS#readme",
   "dependencies": {
     "nostr-tools": "^2.7.1",
+    "tinybase": "^5.1.1",
     "webpeer-piping": "^0.0.1",
-    "webpeerjs": "^0.1.9"
+    "webpeerjs": "^0.1.9",
+    "yjs": "^13.6.18"
   },
   "devDependencies": {
     "vite": "^5.3.4"

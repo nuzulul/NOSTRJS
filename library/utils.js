@@ -22,3 +22,8 @@ export { pipe }
 export { lp }
 
 export { map }
+
+export function mkDebug(msg){
+	if(constants.CONSTANTS_DEBUG_ENABLED)console.debug(msg)
+	return
+}
