@@ -198,7 +198,7 @@ class nostrjs{
 			await this.#db.setStoreState(state)
 
 			//console.log('getValues() new',this.#store.getValues())
-			console.log('getTables() new',this.#store.getTables())
+			//console.log('getTables() new',this.#store.getTables())
 			
 		}catch(err){
 			mkDebug(err)
