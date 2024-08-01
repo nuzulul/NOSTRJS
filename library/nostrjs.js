@@ -6,14 +6,12 @@ import {
 	uint8ArrayToString,
 	uint8ArrayFromString,
 	mkDebug
-} from './utils'
-import * as constants from  './constants'
+} from './utils.js'
+import * as constants from  './constants.js'
+import {nostrjsDB} from './db.js'
+import {nostrjsPOOL} from './pool.js'
 import {webpeerjs} from 'webpeerjs'
-import {SimplePool} from 'nostr-tools/pool'
-import {createStore} from 'tinybase'
-import {createIndexedDbPersister} from 'tinybase/persisters/persister-indexed-db'
-import * as Y from 'yjs'
-import {createYjsPersister} from 'tinybase/persisters/persister-yjs'
+
 
 class nostrjs{
 	
@@ -22,18 +20,23 @@ class nostrjs{
 	
 	#nostrjsDial
 	#nostrjsRun
+	#db
 	#store
-	#persister
+	#pool
+	#broadcast
+	#bufferNewEvents
 	
-	constructor(webpeer,store,persister){
+	constructor(webpeer,db,pool){
 		
 		this.webpeer = webpeer
 		this.online = 0
 		
 		this.#nostrjsDial =  new Map()
 		this.#nostrjsRun = false
-		this.#store = store
-		this.#persister = persister
+		this.#db = db
+		this.#store = db.store
+		this.#pool = pool
+		this.#bufferNewEvents = []
 		
 		this.webpeer.IPFS.libp2p.addEventListener('peer:identify', async (evt) => {
 			if(evt.detail.protocols.includes(constants.CONSTANTS_PROTOCOL) && !evt.detail.connection.transient){
@@ -52,37 +55,36 @@ class nostrjs{
 		
 		const [broadcast,listen,members] = this.webpeer.joinRoom('_'+constants.CONSTANTS_PREFIX+'_')
 		
+		this.#broadcast = broadcast
+		
+		listen((data)=>{
+			for(const event of data){
+				if(!this.#db.hasEvent(event.id)){
+					this.#db.addEvent(event)
+					this.#pool.publishEvent(event)
+				}
+			}
+		})
+		
 		members((data)=>{
 			this.online = data.length
 		})
 		
 		this.#registerProtocol()
 		
-		const pool = new SimplePool()
+		this.#pool.onEvent((event)=>{
+			if(!this.#db.hasEvent(event.id)){
+				this.#db.addEvent(event)
+				this.#bufferNewEvents.push(event)
+			}
+		})
 		
-		let h = pool.subscribeMany(
-			constants.CONSTANTS_RELAYS,
-			[
-				{
-				  //authors: ['32e1827635450ebb3c5a7d12c1f8e7b2b514439ac10a67eef3d9fd9c5c68e245'],
-				},
-			],
-			{
-				onevent(event) {
-				  //console.log(event)
-				},
-				oneose() {
-				  h.close()
-				}
-			}			
-		)
-
-		//const persister = createIndexedDbPersister(this.#store, 'nostrjs')
-		this.#store.setValue(this.webpeer.id, 'ok');
-		//this.#store.setCell('t1', 'r1', 'c1', 'World');
-		//console.log(this.#store.getValue('v1') + ' ' + this.#store.getCell('t1', 'r1', 'c1'))
-		//console.log('getValues()',this.#store.getValues())
-		//console.log('getTables()',this.#store.getTables())
+		setInterval(()=>{
+			if(this.#bufferNewEvents.length>0 && this.online > 1){
+				const data = this.#bufferNewEvents.splice(0,10)
+				this.#broadcast(data)
+			}
+		},5000)
 		
 	}
 	
@@ -109,11 +111,7 @@ class nostrjs{
 				)
 				//console.log('outputhandler',output)
 				if(output === 'sync'){
-					const doc = new Y.Doc()
-					const persister = createYjsPersister(this.#store, doc)
-					await persister.save()
-					//console.log('doc',doc.toJSON())
-					const state = await Y.encodeStateAsUpdate(doc)
+					const state = await this.#db.getStoreState()
 					pipe(
 						[state],
 						(source) => lp.encode(source),
@@ -166,17 +164,13 @@ class nostrjs{
 				}
 			)
 			
-			const doc = new Y.Doc()
+
 			const state = output
 			
-			const persister = createYjsPersister(this.#store, doc)
-			await persister.startAutoLoad()
-			await persister.startAutoSave()			
-			await Y.applyUpdate(doc, state)
-			
-			//console.log('outputdial',doc.toJSON())
-			console.log('getValues() new',this.#store.getValues())
-			//console.log('getTables() new',this.#store.getTables())
+			await this.#db.setStoreState(state)
+
+			//console.log('getValues() new',this.#store.getValues())
+			console.log('getTables() new',this.#store.getTables())
 			
 		}catch(err){
 			mkDebug(err)
@@ -192,25 +186,26 @@ class nostrjs{
 		if(arguments.length > 0){
 			const configuration = arguments[0]
 			if(configuration.relays === undefined){
-				throw mkErr('relay is required')
+				throw mkErr('Relay is required')
 			}else{
 				if(configuration.relays.length == 0){
-					throw mkErr('relay is required')
+					throw mkErr('Minimal 1 relay is required')
 				}
 			}
 			
 			config = arguments[0]
 			
+		}else{
+			throw mkErr('Relay is required')
 		}
 		
 		const webpeer = await webpeerjs.createWebpeer(config)
 		
-		const store = createStore()
-		const persister = createIndexedDbPersister(store, 'nostrjs')
-		await persister.load()
-		await persister.startAutoSave()
+		const db = await nostrjsDB.createDB()
 		
-		return new nostrjs(webpeer,store,persister)
+		const pool = await nostrjsPOOL.createPOOL(config)
+		
+		return new nostrjs(webpeer,db,pool)
 	}
 	
 }

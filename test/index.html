@@ -13,8 +13,14 @@
         import { nostrjs } from './../library/nostrjs.js'
         
 		void async function main() {
+
+			const config = {
+				relays:[
+					'wss://relay.damus.io/'
+				]
+			}
 			
-			const client = await nostrjs.createNostrClient()
+			const client = await nostrjs.createNostrClient(config)
 			
 			console.log('start')
 			
