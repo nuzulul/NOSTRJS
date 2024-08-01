@@ -81,8 +81,36 @@ class nostrjs{
 		
 		setInterval(()=>{
 			if(this.#bufferNewEvents.length>0 && this.online > 1){
-				const data = this.#bufferNewEvents.splice(0,10)
-				this.#broadcast(data)
+				//const data = this.#bufferNewEvents.splice(0,50)
+				//console.log('size',new Blob([JSON.stringify(data)]).size)
+				//this.#broadcast(data)
+				
+				let data = []
+				
+				const limit = 75*1024
+				while(true){
+					const event = this.#bufferNewEvents.shift()
+					data.push(event)
+					const size = new Blob([JSON.stringify(data)]).size
+					if(size > limit){
+						if(data.length > 1){
+							data.splice(-1)
+							this.#bufferNewEvents.unshift(event)
+							this.#broadcast(data)
+						}else{
+							//console.log('skip',data)
+						}
+						return
+					}else{
+						if(this.#bufferNewEvents.length == 0){
+							if(data.length>0){
+								this.#broadcast(data)
+							}
+							return
+						}
+					}
+
+				}
 			}
 		},5000)
 		
