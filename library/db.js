@@ -21,6 +21,16 @@ class nostrjsDB{
 	addEvent(event){
 		const dataEvent = this.#serializeEvent(event)
 		this.store.setRow(constants.CONSTANTS_STORE_TABLE_EVENTS, event.id, dataEvent)
+		this.#addTags(event.id,event.tags)
+	}
+	
+	#addTags(id,tags){
+		for(const tag of tags){
+			let tagindex = tag
+			tagindex.unshift(id)
+			const obj = Object.assign({}, tagindex)
+			this.store.addRow(constants.CONSTANTS_STORE_TABLE_TAGS, obj,false)
+		}
 	}
 
 	#serializeEvent(event){
@@ -51,7 +61,6 @@ class nostrjsDB{
 	async getStoreState(){
 		
 		const storetemp = createStore()
-		
 		const ids = this.store.getSortedRowIds(constants.CONSTANTS_STORE_TABLE_EVENTS, 'created_at', true, 1, constants.CONSTANTS_STORE_SYNC_LIMIT)
 		for(const id of ids){
 			const dataEvent = this.store.getRow(constants.CONSTANTS_STORE_TABLE_EVENTS, id)
@@ -67,12 +76,22 @@ class nostrjsDB{
 	}
 	
 	async setStoreState(state){
+		const storetemp = createStore()
 		const doc = new Y.Doc()
-		const persister = createYjsPersister(this.store, doc)
+		const persister = createYjsPersister(storetemp, doc)
 		await persister.startAutoLoad()
 		await persister.startAutoSave()			
 		await Y.applyUpdate(doc, state)
 		//console.log('outputdial',doc.toJSON())
+		
+		const ids = storetemp.getRowIds(constants.CONSTANTS_STORE_TABLE_EVENTS)
+		for(const id of ids){
+			const dataEvent = storetemp.getRow(constants.CONSTANTS_STORE_TABLE_EVENTS, id)
+			if(!hasEvent(dataEvent.id)){
+				const event = this.#deserializeEvent(dataEvent)
+				this.addEvent(event)
+			}
+		}
 	}
 	
 	static async createDB(){
